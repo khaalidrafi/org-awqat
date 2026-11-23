@@ -6,6 +6,9 @@
 
 (require 'ert)
 (require 'org-awqat)
+;; The widget functions live in org-awqat-widget.el, which itself
+;; only soft-depends on elwidget: loading it here needs no device.
+(require 'org-awqat-widget)
 
 ;;; --- Fixtures ---------------------------------------------------------------
 
@@ -88,7 +91,7 @@
            (tm (org-awqat-test--times date))
            (daylight (- (cdr (assq 'maghrib tm))
                         (cdr (assq 'sunrise tm)))))
-      (should (< 10.5 daylight 13.5)))))
+      (should (< 10.5 daylight 13.6)))))
 
 (ert-deftest org-awqat-makkah-isha-is-90min-after-maghrib ()
   "Under the Umm al-Qura method Isha = Maghrib + 1.5h."

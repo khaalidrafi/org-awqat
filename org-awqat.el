@@ -35,7 +35,7 @@
       ((require 'cal-islam nil t))
       (t (error "org-awqat: no Islamic calendar (cal-islamic/cal-islam)")))
 (declare-function calendar-islamic-from-absolute "cal-islamic" (date))
-(declare-function calendar-absolute-from-islamic "cal-islamic" (date))
+(declare-function calendar-islamic-to-absolute "cal-islamic" (date))
 (require 'cl-lib)
 (require 'org)
 (require 'org-element)
@@ -60,7 +60,7 @@ Uses Emacs' built-in arithmetic Islamic (civil) calendar."
 
 (defun org-awqat-hijri-to-gregorian (date)
   "Convert Hijri DATE (MONTH DAY YEAR) to Gregorian (MONTH DAY YEAR)."
-  (calendar-gregorian-from-absolute (calendar-absolute-from-islamic date)))
+  (calendar-gregorian-from-absolute (calendar-islamic-to-absolute date)))
 
 (defun org-awqat-today-hijri ()
   "Today's Hijri date as (MONTH DAY YEAR)."
@@ -351,8 +351,9 @@ reaches the angle (polar latitudes)."
          (fajr-t (org-awqat--hour-angle fajr-a lat decl))
          (maghrib-t sunrise-t)
          (isha-t (if isha-a (org-awqat--hour-angle isha-a lat decl)
-                   ;; Umm al-Qura: 90 minutes after Maghrib.
-                   (when maghrib-t 1.5))))
+                   ;; Umm al-Qura: 90 minutes after MAGHRIB, not after
+                   ;; Dhuhr (the addition below is to dhuhr).
+                   (when maghrib-t (+ maghrib-t 1.5)))))
     `((fajr . ,(when fajr-t (- dhuhr fajr-t)))
       (sunrise . ,(when sunrise-t (- dhuhr sunrise-t)))
       (dhuhr . ,dhuhr)
@@ -363,11 +364,13 @@ reaches the angle (polar latitudes)."
 (defun org-awqat-format-time (hours)
   "Decimal HOURS as \"HH:MM\" (nil stays nil)."
   (when hours
-    (let* ((h (mod (floor (+ hours 1e-9)) 24))
-           (m (floor (+ (* 60 (- hours (floor hours))) 1e-9))))
-      ;; rounding edge: 60 minutes rolls into the next hour
-      (if (= m 60) (format "%02d:00" (mod (1+ h) 24))
-        (format "%02d:%02d" h m)))))
+    ;; Round to the nearest minute (12.999999 -> "13:00"); a plain
+    ;; floor needs an epsilon per field and still leaves seams where
+    ;; the hour rounds up while the minute goes negative.
+    (let* ((tm (mod (round (* hours 60)) 1440))
+           (h (/ tm 60))
+           (m (% tm 60)))
+      (format "%02d:%02d" h m))))
 
 (defun org-awqat-times (&optional date)
   "Salah times for DATE (default today) as ((PRAYER . \"HH:MM\")...).
@@ -439,8 +442,14 @@ heading wins over Default."
   (with-current-buffer buf
     (goto-char (point-min))
     (let ((case-fold-search nil))
+      ;; Headings are stored capitalized ("Fri", "Default"); day
+      ;; names arrive lowercase ("fri") -- match either form.
       (when (re-search-forward
-             (concat "^\\* \\(" (regexp-quote day) "\\|Default\\)[ \t]*$") nil t)
+             (concat "^\\* \\(?:"
+                     (regexp-quote day) "\\|"
+                     (regexp-quote (capitalize day))
+                     "\\|Default\\)[ \t]*$")
+             nil t)
         (goto-char (match-beginning 0))
         (point)))))
 
@@ -493,12 +502,17 @@ The day's own heading wins over Default; unset prayers are absent."
          (buf (org-awqat--jamaah-buffer))
          (read-props
           (lambda (day)
-            (when (org-awqat--jamaah-find-heading buf day)
-              (delq nil
-                    (mapcar (lambda (cell)
-                              (let ((v (org-entry-get (point) (cdr cell))))
-                                (when v (cons (car cell) v))))
-                            org-awqat--jamaah-props))))))
+            ;; org-entry-get reads properties at POINT of the CURRENT
+            ;; BUFFER -- everything, including the search below, must
+            ;; happen inside the Jama'ah file's buffer, not in whatever
+            ;; buffer the caller happened to be in.
+            (with-current-buffer buf
+              (when (org-awqat--jamaah-find-heading buf day)
+                (delq nil
+                      (mapcar (lambda (cell)
+                                (let ((v (org-entry-get (point) (cdr cell))))
+                                  (when v (cons (car cell) v))))
+                              org-awqat--jamaah-props)))))))
     (append (funcall read-props (org-awqat--day-name date))
             (funcall read-props "Default"))))
 
