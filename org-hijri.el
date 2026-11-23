@@ -731,13 +731,13 @@ the calendar-agnostic bracket toggle."
                          (get-buffer-window calendar-buffer t)
                          (memq what '(day month year)))
                 (org-recenter-calendar
-                 (calendar-islamic-to-absolute new-h))))))))))))
+                 (calendar-islamic-to-absolute new-h)))))))))))
 
 (defun org-hijri--rewrite-hijri (ts)
   "Return TS's text rebuilt as a Hijri stamp, date and time unchanged.
 Used for edits that do not move the date (e.g. cursor after the
 stamp) so that the marker survives Org's rewrite."
-  (let* ((inactive (= (string-to-char ts) ?\[)))
+  (let* ((inactive (= (string-to-char ts) ?\[))
          (h (org-hijri--parse-hijri ts))
          (hms-end (save-match-data
                     (and (string-match org-hijri--stamp-regexp ts)
