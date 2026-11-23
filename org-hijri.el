@@ -627,25 +627,24 @@ the calendar-agnostic bracket toggle."
                  ;; is everything after the last standard part -- the
                  ;; minute, or, without a time, the marker/weekday --
                  ;; up to the closing bracket.  Captured structurally
-                 ;; instead of with the stock end-anchored regex;
-                 ;; SUPPRESS-TMP-DELAY drops deadline delay cookies.
+                 ;; instead of with the stock end-anchored regex.
                  (hms-end (save-match-data
                             (and (string-match org-hijri--stamp-regexp ts)
                                  (max (or (match-end 5) 0)
                                       (or (match-end 8) 0)))))
-                 (extra (let ((e (and hms-end
-                                      (> (length ts) (1+ hms-end))
-                                      (substring ts hms-end -1))))
-                          (if (and e suppress-tmp-delay)
-                              (replace-regexp-in-string
-                               " --[0-9]+[hdwmy]" "" e)
-                            e)))
+                 (extra (and hms-end
+                             (> (length ts) (1+ hms-end))
+                             (substring ts hms-end -1)))
                  (with-hm (string-match "^.\\{10\\}.*?[0-9]+:[0-9][0-9]" ts))
                  (dm (max (nth 1 org-time-stamp-rounding-minutes) 1))
                  (t0 (org-parse-time-string ts t))
                  (hour (nth 2 t0))
                  (minute (nth 1 t0))
                  new-h new-hour new-minute)
+            ;; SUPPRESS-TMP-DELAY drops deadline delay cookies.
+            (when (and extra suppress-tmp-delay)
+              (setq extra (replace-regexp-in-string
+                           " --[0-9]+[hdwmy]" "" extra)))
             (setq new-hour hour new-minute minute)
             (pcase what
               ((or `year `month `day)
