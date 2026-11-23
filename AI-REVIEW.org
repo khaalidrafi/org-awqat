@@ -1,0 +1,60 @@
+#+TITLE: org-awqat AI review queue
+
+What a human should look at first, and how.  Everything here was
+AI-generated under the repo's AGENTS.md; CI (Emacs 30.1,
+byte-compile warnings-as-errors + the offline ERT suite, 37 tests)
+is green on ai/main.
+
+* Highest-value review targets
+
+** TODO org-hijri.el -- the parse advice (the load-bearing trick)
+   :PROPERTIES:
+   :EFFORT:   30 min
+   :END:
+   ~org-hijri--parse-time-string-advice~ converts Hijri-marked dates
+   at the single choke point every Org timestamp-to-date path uses.
+   Verify the claim that nothing bypasses ~org-parse-time-string~:
+   grep Org's source for timestamp parsing paths (element parser,
+   agenda, clocking) and confirm the advice covers them; check a
+   marked stamp inside a CLOCK line and a deadline warning period.
+
+** TODO org-hijri.el -- S-arrow editing (~org-hijri--change-timestamp~)
+   :PROPERTIES:
+   :EFFORT:   45 min
+   :END:
+   The largest function in the package (cursor-category dispatch,
+   Islamic-domain arithmetic, stamp rewrite, point restoration).
+   After the paren-structure repairs in this session (see git log),
+   a careful read of the category-at / pos-restoration math against
+   Org's own ~org-timestamp-change~ is warranted.  Then use it:
+   ~S-<right>~ over every part of ~<1448-06-15 Hijri 10:00 +1w>~.
+
+** TODO org-awqat.el -- solar math vs. a trusted source
+   :PROPERTIES:
+   :EFFORT:   20 min
+   :END:
+   ~org-awqat--sun-position~ / ~--hour-angle~ / ~--asr-altitude~:
+   compare a day's six times against IslamicFinder or your local
+   mosque's calendar for your own location (the suite checks Dhaka
+   and internal consistency only; angles are conventions, so
+   differences of a minute or two are expected, wrong-by-5 is not).
+
+** TODO The Maghrib source chain
+   :PROPERTIES:
+   :EFFORT:   10 min
+   :END:
+   org-hijri reads Maghrib from org-awqat first, then zkry/awqat,
+   then solar.el, each wrapped in condition-case.  Unplug each in
+   turn (unbind location, then ~package-delete~ awqat) and confirm
+   the Hijri "today" still rolls at the right time or degrades to
+   midnight without an error.
+
+* Notes
+
+- The five real bugs this session's first CI run exposed (removed
+  calendar alias, jamaah buffer/case handling, Umm al-Qura Isha
+  offset, minute rounding) are all covered by regression tests now;
+  their commit messages carry the analysis.
+- The elwidget half (~org-awqat-widget-register~ and the three
+  specs) needs a device with the emacshell app: add the widgets,
+  verify tap targets and the countdown.

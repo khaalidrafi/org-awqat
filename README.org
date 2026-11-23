@@ -164,7 +164,7 @@ rather than being guessed at.
 
 * Development
 
-=makel compile= and =make test= (byte-compile warnings are errors, ERT
+=make compile= and =make test= (byte-compile warnings are errors, ERT
 suite is fully offline).  CI runs both on every push.
 
 * License
