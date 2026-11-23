@@ -103,6 +103,11 @@
 (declare-function awqat--prayer-time "awqat" (d prayer))
 (declare-function org-awqat-times-decimal "org-awqat" (&optional date))
 (declare-function org-agenda-redo "org-agenda" (&optional all))
+(declare-function org-agenda-list "org-agenda"
+                  (&optional key start-day span with-hour))
+;; org-fold.el is core Org since 9.6, but the byte-compiler needs it
+;; loaded to recognize the org-fold-core-ignore-modifications macro.
+(require 'org-fold)
 
 (defgroup org-hijri nil
   "Islamic (Hijri) dates in Org mode."
@@ -622,18 +627,19 @@ the calendar-agnostic bracket toggle."
                  ;; is everything after the last standard part -- the
                  ;; minute, or, without a time, the marker/weekday --
                  ;; up to the closing bracket.  Captured structurally
-                 ;; instead of with the stock end-anchored regex.
+                 ;; instead of with the stock end-anchored regex;
+                 ;; SUPPRESS-TMP-DELAY drops deadline delay cookies.
                  (hms-end (save-match-data
                             (and (string-match org-hijri--stamp-regexp ts)
                                  (max (or (match-end 5) 0)
                                       (or (match-end 8) 0)))))
-                 (extra (and hms-end
-                             (> (length ts) (1+ hms-end))
-                             (substring ts hms-end -1)))
-                 (extra (if (and extra suppress-tmp-delay)
-                            (replace-regexp-in-string
-                             " --[0-9]+[hdwmy]" "" extra)
-                          extra))
+                 (extra (let ((e (and hms-end
+                                      (> (length ts) (1+ hms-end))
+                                      (substring ts hms-end -1))))
+                          (if (and e suppress-tmp-delay)
+                              (replace-regexp-in-string
+                               " --[0-9]+[hdwmy]" "" e)
+                            e)))
                  (with-hm (string-match "^.\\{10\\}.*?[0-9]+:[0-9][0-9]" ts))
                  (dm (max (nth 1 org-time-stamp-rounding-minutes) 1))
                  (t0 (org-parse-time-string ts t))
