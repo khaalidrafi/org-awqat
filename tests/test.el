@@ -38,8 +38,8 @@
 
 (ert-deftest org-awqat-hijri-year-length-sane ()
   "A Hijri year is 354-355 days on the arithmetic calendar."
-  (let ((days (- (calendar-absolute-from-islamic '(1 1 1448))
-                 (calendar-absolute-from-islamic '(1 1 1447)))))
+  (let ((days (- (calendar-islamic-to-absolute '(1 1 1448))
+                 (calendar-islamic-to-absolute '(1 1 1447)))))
     (should (memq days '(354 355)))))
 
 (ert-deftest org-awqat-hijri-month-names ()
@@ -200,7 +200,7 @@
       ;; The inserted timestamp is the Gregorian equivalent.
       (should (string-prefix-p
                (format "%04d-%02d-%02d" (nth 2 g) (nth 0 g) (nth 1 g))
-               raw))
+               (substring raw 1)))
       ;; And the at-point reader returns the same Hijri date.
       (goto-char (point-min))
       (when (search-forward "<" nil t) (backward-char 1))
@@ -224,7 +224,7 @@
     (let ((body (buffer-substring (point-min) (point-max))))
       (should (string-match-p "TODO Read Qur'an" body))
       (should (string-match-p ":STYLE:[ \t]*habit" body))
-      (should (string-match-p "SCHEDULED: <[^>]+> \\.\\+2d" body)))))
+      (should (string-match-p "SCHEDULED: <[^>]*\\.\\+2d>" body)))))
 
 ;;; --- Widgets -------------------------------------------------------------------
 
@@ -239,7 +239,7 @@
         (progn
           (org-awqat-jamaah-set 'fajr "05:35")
           (let ((tree (org-awqat-widget--jamaah-tree)))
-            (should (cl-find-if (lambda (n) (eq :row (car n))) tree))
+            (should (cl-find-if (lambda (n) (eq :row (car n))) (cdr tree)))
             (should (string-match-p "05:35" (prin1-to-string tree)))))
       (delete-file org-awqat-jamaah-file))))
 
@@ -268,7 +268,7 @@
         (let ((tree (org-awqat-widget--jamaah-tree)))
           ;; No times set: the hint line, no row.
           (should (eq :column (car tree)))
-          (should (null (cl-find-if (lambda (n) (eq :row (car n))) tree))))
+          (should (null (cl-find-if (lambda (n) (eq :row (car n))) (cdr tree)))))
       (delete-file org-awqat-jamaah-file))))
 
 (ert-deftest org-awqat-widget-countdown ()

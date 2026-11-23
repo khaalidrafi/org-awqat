@@ -438,18 +438,21 @@ heading wins over Default."
     buf))
 
 (defun org-awqat--jamaah-find-heading (buf day)
-  "In BUF, move to DAY's first-level Jama'ah heading, or nil."
+  "In BUF, move to DAY's first-level Jama'ah heading, or nil.
+DAY is \"Default\" or a weekday abbreviation; headings are stored
+capitalized (\"Fri\"), so a weekday matches either case -- but a
+weekday NEVER matches the Default heading, and Default matches only
+Default: the day override and the fallback must stay distinct."
   (with-current-buffer buf
     (goto-char (point-min))
-    (let ((case-fold-search nil))
-      ;; Headings are stored capitalized ("Fri", "Default"); day
-      ;; names arrive lowercase ("fri") -- match either form.
-      (when (re-search-forward
-             (concat "^\\* \\(?:"
-                     (regexp-quote day) "\\|"
-                     (regexp-quote (capitalize day))
-                     "\\|Default\\)[ \t]*$")
-             nil t)
+    (let ((case-fold-search nil)
+          (pat (if (string-equal day "Default")
+                   "^\\* Default[ \t]*$"
+                 (concat "^\\* \\(?:"
+                         (regexp-quote day) "\\|"
+                         (regexp-quote (capitalize day))
+                         "\\)[ \t]*$"))))
+      (when (re-search-forward pat nil t)
         (goto-char (match-beginning 0))
         (point)))))
 
