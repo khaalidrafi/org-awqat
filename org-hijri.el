@@ -148,6 +148,16 @@ agenda so entries that became due tonight appear."
   :group 'org-hijri
   :type 'boolean)
 
+(defvar org-hijri-mode nil
+  "Non-nil while `org-hijri-mode' is enabled.
+Declared early so the advice functions below byte-compile without a
+free-variable warning; `define-minor-mode' sets the real value.")
+
+;; org-agenda loads lazily; these quiet the byte-compiler for the
+;; agenda integration at the bottom of this file.
+(defvar org-agenda-format-date)
+(defvar org-agenda-buffer-name)
+
 (defface org-hijri-marker
   '((t :slant italic))
   "Face for Hijri-marked timestamps."
