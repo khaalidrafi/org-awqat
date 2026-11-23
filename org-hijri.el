@@ -694,7 +694,7 @@ the calendar-agnostic bracket toggle."
                                     (nth 2 cal-date))))))
               ;; Repeater position (integer) or anything else: date
               ;; and time unchanged, extra text edited below.
-              (_ (setq new-h h))))
+              (_ (setq new-h h)))
             (when (integerp what)
               (setq extra (org-modify-ts-extra extra what n dm)))
             (when (and (memq what '(hour minute))
@@ -731,7 +731,7 @@ the calendar-agnostic bracket toggle."
                          (get-buffer-window calendar-buffer t)
                          (memq what '(day month year)))
                 (org-recenter-calendar
-                 (calendar-islamic-to-absolute new-h)))))))))))
+                 (calendar-islamic-to-absolute new-h))))))))))))
 
 (defun org-hijri--rewrite-hijri (ts)
   "Return TS's text rebuilt as a Hijri stamp, date and time unchanged.
