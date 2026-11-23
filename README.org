@@ -1,0 +1,172 @@
+#+TITLE: org-awqat
+#+SUBTITLE: Hijri dates, Salah times, Jama'ah tracking and Hijri Org timestamps for Emacs
+
+An Islamic times package for Emacs: plain Elisp, fully offline, no
+external binaries.  Part of the Org-on-Android family ([[https://github.com/khaalidrafi/emacshell][emacshell]] +
+[[https://github.com/khaalidrafi/elwidget][elwidget]]), works equally on the desktop.
+
+* What it gives you
+
+- *Hijri date* — today's Hijri date, formatting, conversion both ways
+  (Emacs' built-in arithmetic Islamic civil calendar).
+- *Hijri Org timestamps* — insert, schedule and set deadlines by
+  typing a Hijri date; read the Hijri equivalent of any Org
+  timestamp.  Org keeps its portable Gregorian timestamps
+  underneath, so every other package (agenda, org-habit,
+  loophabits...) keeps working; org-awqat is the Hijri front door.
+- *Salah times* — Fajr, Sunrise, Dhuhr, Asr, Maghrib and Isha
+  computed offline from standard solar astronomy; several angle
+  conventions (MWL, ISNA, Egyptian, Karachi, Umm al-Qura) plus
+  manual angles and the Hanafi Asr option.
+- *Jama'ah (congregation) times* — your own per-prayer times in a
+  plain Org file, with per-weekday overrides (e.g. a different
+  Friday schedule).
+- *Home-screen widgets* — through the elwidget widget maker.
+
+* Setup
+
+#+BEGIN_SRC emacs-lisp
+(use-package org-awqat
+  :custom
+  (org-awqat-latitude 23.8103)          ; north positive
+  (org-awqat-longitude 90.4125)         ; east positive
+  (org-awqat-method 'mwl)               ; or 'isna 'egypt 'karachi 'makkah
+  (org-awqat-asr-factor 1)              ; 2 for Hanafi
+  ;; (org-awqat-timezone-offset 6)       ; nil = auto from your zone
+  (org-awqat-jamaah-file "~/org/awqat.org"))
+#+END_SRC
+
+* Daily use
+
+| Command | What it does |
+|---+---|
+| =M-x org-awqat-display-today= | Echo area: today's Hijri + Gregorian date |
+| =M-x org-awqat-display-times= | Echo area: today's six Salah times |
+| =M-x org-awqat-insert-timestamp-at-point= | Insert an Org timestamp by typing a Hijri date (prefix arg: inactive) |
+| =M-x org-awqat-schedule-at-point= | SCHEDULE the entry at point from a Hijri date |
+| =M-x org-awqat-deadline-at-point= | DEADLINE the entry at point from a Hijri date |
+| =M-x org-awqat-timestamp-hijri-at-point= | Show the Hijri reading of the timestamp at point |
+| =M-x org-awqat-new-habit-at-point= | New habit heading starting from a Hijri date |
+| =M-x org-awqat-jamaah-set-at-point= | Add/edit one of your Jama'ah times |
+| =M-x org-awqat-jamaah-open= | Visit the Jama'ah file for manual editing |
+
+Hijri input everywhere accepts =1447-06-12= or =1447/6/12=; empty
+input means today.
+
+* Hijri timestamps, the honest way
+
+Org timestamps are Gregorian internally; pretending otherwise breaks
+every other tool that reads your files.  org-awqat therefore does the
+conversion at the door: you *think* in Hijri (type it, read it), Org
+*stores* Gregorian.  Habits created with =org-awqat-new-habit-at-point=
+carry =STYLE: habit= and a =.+Nd= repeater, so [[https://github.com/khaalidrafi/loophabits][loophabits]] and org-habit
+track them as usual — while you set and check their dates in Hijri.
+
+* Jama'ah file format
+
+=org-awqat-jamaah-file= (default =~/org/awqat.org=) is ordinary Org:
+
+#+BEGIN_SRC org
+,* Default
+:PROPERTIES:
+:FAJR:     05:30
+:DHUHR:    13:15
+:ASR:      16:40
+:MAGHRIB:  17:55
+:ISHA:     19:10
+:END:
+
+,* Fri
+:PROPERTIES:
+:DHUHR:    13:30
+:END:
+#+END_SRC
+
+The day's own heading wins over =Default=; =M-x
+org-awqat-jamaah-set-at-point= maintains the file for you.
+
+* Widgets (Android)
+
+After [[https://github.com/khaalidrafi/elwidget][elwidget]] is set up in the emacshell app:
+
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'elwidget
+  (org-awqat-widget-register)
+  (elwidget-refresh))
+#+END_SRC
+
+Then add these on your home screen from the widget picker:
+
+- =awqat-hijri= (2x1) — the Hijri date, with the Gregorian day below
+- =awqat-salah= (4x2) — next prayer with countdown + all six times
+- =awqat-jamaah= (4x1) — today's Jama'ah times
+
+* org-hijri: Org that natively reads Hijri dates
+
+The second package in this repository, =org-hijri.el=, goes where the
+simple conversion helpers stop: Org *displays and edits* Islamic
+dates as Islamic, in the file itself.
+
+#+BEGIN_SRC org
+DEADLINE: <1448-06-15 Hijri -2d>
+<1448-06-15 Hijri 18:30>          ,* active stamp with a time
+<1448-06-15 Hijri>--<1448-06-18 Hijri>   ,* date range
+<1448-06-15 Hijri +1y>            ,* repeater in Islamic years
+#+END_SRC
+
+Only stamps carrying the =Hijri= marker are Islamic; every other
+timestamp stays exactly as Org wrote it.  Turn it on globally:
+
+#+BEGIN_SRC emacs-lisp
+(use-package org-hijri
+  :after org
+  :config (org-hijri-mode 1))
+#+END_SRC
+
+What the mode does:
+
+- *Parsing* — advice on =org-parse-time-string= (the one choke point
+  every timestamp-to-date path in Org funnels through, element parser
+  included) converts marked dates to their Gregorian daytime; the
+  buffer text stays Hijri, so agenda, deadlines, sorting, clocking and
+  comparisons are all exact.
+- *The day starts at Maghrib* — =org-hijri-today= rolls over at
+  sunset, not midnight (the Hijri analogue of
+  =org-extend-today-until=).  Maghrib comes from org-awqat itself
+  (your one location setting drives both), or the standalone =awqat=
+  package, or =solar.el= as the last resort.  After Maghrib tonight,
+  tomorrow's Hijri entries are already "today" in the agenda.
+- *Islamic arithmetic* — repeaters step in Islamic months and years
+  (~354-day years), and =S-<arrow>= editing
+  (=org-timestamp-change=) moves the date inside the Islamic
+  calendar, never rewriting your stamp as Gregorian.
+- *Agenda* — day headers show each day's Hijri date, and
+  =M-x org-hijri-agenda= starts at the current Islamic day.
+
+Commands: =M-x org-hijri-show=, =org-hijri-timestamp=,
+=org-hijri-deadline=, =org-hijri-schedule=, =org-hijri-agenda=.
+
+Known limits: date ranges where only one end is marked are parsed but
+re-emitted Gregorian on edit; diary sexps ignore the marker; invalid
+numerals (day 30 of a 29-day month) keep their Gregorian reading
+rather than being guessed at.
+
+* Accuracy notes
+
+- Hijri: the *arithmetic Islamic civil calendar* (Emacs built-in), not
+  an observed moon sighting; dates can differ from your local
+  declaration by a day.
+- Salah: low-precision solar formulas (NOAA-class), accurate to well
+  under a minute of angle-driven times; no elevation or atmospheric
+  refraction tuning beyond the standard 0.833° horizon depression.
+- The angles are conventions, not physics: pick the one your
+  community follows.
+
+* Development
+
+=makel compile= and =make test= (byte-compile warnings are errors, ERT
+suite is fully offline).  CI runs both on every push.
+
+* License
+
+GPL-3.0-or-later.
