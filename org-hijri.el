@@ -793,7 +793,7 @@ a time of day.  Returns (TIME TIME-WAS-GIVEN)."
                          default)
           org-time-was-given)))
 
-(defun org-hijri-timestamp (&optional with-time inactive)
+(defun org-hijri-timestamp (&optional with-time)
   "Insert a Hijri timestamp at point.
 With one prefix argument (WITH-TIME), include a time of day; with
 two, insert an inactive timestamp [.. Hijri].  You are prompted for
