@@ -21,7 +21,9 @@ Hijri stamps).  Plain Elisp, Emacs 27.1+, org 9.3+.
 - `make compile` treats warnings as errors; `make test` is offline ERT.
 - Do not quote user prompts in commits, docs or releases; describe the
   change, not the conversation.
-- Commits: GLM 5.3 <glm-5.3@z.ai> with Co-authored-by: Khalid Rafi
-  <khaalidrafi@users.noreply.github.com>.
+- Commits: authored as the model identity MODEL <model@provider>
+  (e.g. GLM 5.3 <glm-5.3@z.ai>) with Co-authored-by: Khalid Rafi
+  <khaalidrafi@gmail.com> -- the canonical owner email, no variants
+  (Owner order 2026-11-24).
 - Pushes use the Khalid's Slave GitHub App credential helper (never a
   stored PAT, never the plugin).
